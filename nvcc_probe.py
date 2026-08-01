@@ -38,7 +38,8 @@ def main():
 
     step("1. Ставлю pip-wheel'ы CUDA toolkit (nvcc + заголовки + cccl)")
     pkgs = "nvidia-cuda-nvcc-cu12 nvidia-cuda-runtime-cu12 nvidia-cuda-cccl-cu12"
-    rc, out = sh(f"pip install --user {pkgs} 2>&1")
+    # force-reinstall: прошлый прогон мог поставить wheel частично (в bin/ оказался только ptxas)
+    rc, out = sh(f"pip install --user --force-reinstall --no-cache-dir --no-deps {pkgs} 2>&1")
     print("\n".join(out.splitlines()[-25:]), flush=True)
     print("pip rc:", rc, flush=True)
 
