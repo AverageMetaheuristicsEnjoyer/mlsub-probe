@@ -26,18 +26,28 @@ def find_under_site(relpath):
     return hits
 
 
+def find_by_name(name):
+    """Надёжный поиск исполняемого файла по всему PYTHONUSERBASE."""
+    rc, out = sh(f"find {USERBASE} -name '{name}' -type f 2>/dev/null")
+    return [p for p in out.splitlines() if p.strip()]
+
+
 def main():
     print("nvcc-проба старт:", time.strftime("%F %T"), flush=True)
     print("PYTHONUSERBASE:", USERBASE, flush=True)
 
     step("1. Ставлю pip-wheel'ы CUDA toolkit (nvcc + заголовки + cccl)")
     pkgs = "nvidia-cuda-nvcc-cu12 nvidia-cuda-runtime-cu12 nvidia-cuda-cccl-cu12"
-    rc, out = sh(f"pip install --user -q {pkgs} 2>&1 | tail -15")
-    print(out, flush=True)
+    rc, out = sh(f"pip install --user {pkgs} 2>&1")
+    print("\n".join(out.splitlines()[-25:]), flush=True)
     print("pip rc:", rc, flush=True)
 
     step("2. Где оказался nvcc")
-    nvcc_hits = find_under_site("cuda_nvcc/bin/nvcc")
+    rc, out = sh("pip show -f nvidia-cuda-nvcc-cu12 2>&1 | head -30")
+    print("--- pip show nvidia-cuda-nvcc-cu12 ---\n" + out, flush=True)
+    print("--- nvidia/ в site-packages ---", flush=True)
+    print(sh(f"ls -la {USERBASE}/lib/python*/site-packages/nvidia/ 2>&1")[1], flush=True)
+    nvcc_hits = find_under_site("cuda_nvcc/bin/nvcc") or find_by_name("nvcc")
     print("nvcc-кандидаты:", nvcc_hits, flush=True)
     if not nvcc_hits:
         print("nvcc из wheel не найден — гипотеза не сработала на этом шаге", flush=True)
