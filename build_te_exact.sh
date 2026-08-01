@@ -47,6 +47,9 @@ mkdir -p "$ROOT/logs" "$ROOT/src" "$WHEEL_DIR"
     fi
     "$VENV/bin/python" -m pip install --upgrade \
         pip setuptools wheel 'cmake>=3.21' ninja 'pybind11>=2.6.0'
+    "$VENV/bin/python" -m pip install --upgrade \
+        --index-url https://download.pytorch.org/whl/cu121 \
+        'torch==2.5.1'
     "$VENV/bin/python" - <<'PY'
 import site
 import torch
@@ -80,6 +83,7 @@ PY
 
     echo "=== build exact TE wheel for SM90 ==="
     cd "$TE_SOURCE"
+    rm -rf "$TE_SOURCE/build/temp.linux-x86_64-cpython-310"
     "$VENV/bin/python" -m pip wheel --no-build-isolation --no-deps . -w "$WHEEL_DIR"
     WHEEL=$(find "$WHEEL_DIR" -maxdepth 1 -type f \
         -name 'transformer_engine-2.16.0+b9d690e*.whl' | sort | tail -n 1)
