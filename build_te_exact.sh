@@ -27,6 +27,7 @@ mkdir -p "$ROOT/logs" "$ROOT/src" "$WHEEL_DIR"
         -c defaults \
         cuda-version=12.1 libcublas-dev=12.1.3.1 \
         cuda-cudart-static=12.1.105 \
+        cuda-cupti=12.1.105 \
         cuda-driver-dev=12.1.105 cuda-nvrtc-dev=12.1.105 \
         cuda-nvml-dev=12.1.105 \
         cuda-profiler-api=12.1.105 \
@@ -38,7 +39,7 @@ mkdir -p "$ROOT/logs" "$ROOT/src" "$WHEEL_DIR"
         nccl=2.27.7 \
         cudnn=9.3.0.75
     "$CONDA" list -p "$CUDA_PREFIX" | grep -E \
-        '^(cuda-(cccl|cudart|driver-dev|nvcc|nvml-dev|nvrtc|nvrtc-dev|nvtx|profiler-api|version)|libcublas|libcublas-dev|libcufft|libcufft-dev|libcurand|libcurand-dev|libcusolver|libcusolver-dev|libcusparse|libcusparse-dev|cudnn|nccl)[[:space:]]'
+        '^(cuda-(cccl|cudart|cupti|driver-dev|nvcc|nvml-dev|nvrtc|nvrtc-dev|nvtx|profiler-api|version)|libcublas|libcublas-dev|libcufft|libcufft-dev|libcurand|libcurand-dev|libcusolver|libcusolver-dev|libcusparse|libcusparse-dev|cudnn|nccl)[[:space:]]'
     du -sh "$CUDA_PREFIX"
 
     echo "=== isolated Python build environment ==="
