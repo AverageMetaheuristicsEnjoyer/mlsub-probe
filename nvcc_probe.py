@@ -43,10 +43,10 @@ def main():
     print("pip rc:", rc, flush=True)
 
     step("2. Где оказался nvcc")
-    rc, out = sh("pip show -f nvidia-cuda-nvcc-cu12 2>&1 | head -30")
-    print("--- pip show nvidia-cuda-nvcc-cu12 ---\n" + out, flush=True)
-    print("--- nvidia/ в site-packages ---", flush=True)
-    print(sh(f"ls -la {USERBASE}/lib/python*/site-packages/nvidia/ 2>&1")[1], flush=True)
+    print("--- содержимое cuda_nvcc/bin/ ---", flush=True)
+    print(sh(f"ls -la {USERBASE}/lib/python*/site-packages/nvidia/cuda_nvcc/bin/ 2>&1")[1], flush=True)
+    print("--- всё, где встречается 'nvcc' в имени ---", flush=True)
+    print(sh(f"find {USERBASE} /home/user/conda -iname '*nvcc*' 2>/dev/null | head -20")[1], flush=True)
     nvcc_hits = find_under_site("cuda_nvcc/bin/nvcc") or find_by_name("nvcc")
     print("nvcc-кандидаты:", nvcc_hits, flush=True)
     if not nvcc_hits:
