@@ -25,6 +25,7 @@ mkdir -p "$ROOT/logs" "$WHEEL_DIR"
         -c nvidia/label/cuda-12.1.1 \
         -c defaults \
         cuda-version=12.1 libcublas-dev=12.1.3.1 \
+        cuda-cudart-static=12.1.105 \
         cuda-driver-dev=12.1.105 cuda-nvrtc-dev=12.1.105 \
         cudnn=9.3.0.75
     "$CONDA" list -p "$CUDA_PREFIX" | grep -E \
@@ -61,6 +62,7 @@ PY
     export CMAKE_PREFIX_PATH=$CUDA_PREFIX${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH}
     export NVTE_FRAMEWORK=pytorch
     export NVTE_CUDA_ARCHS=90
+    export NVCC_PREPEND_FLAGS=--forward-unknown-to-host-compiler
     export MAX_JOBS=8
     export NVTE_BUILD_MAX_JOBS=8
     export NVTE_BUILD_THREADS_PER_JOB=1
