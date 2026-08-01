@@ -88,20 +88,58 @@ def probe_build_toolchain():
     section("ТУЛЧЕЙН ДЛЯ СБОРКИ РАСШИРЕНИЙ (apex / transformer-engine)")
     for tool in ("gcc --version", "g++ --version", "nvcc --version", "ninja --version", "cmake --version"):
         print(f"--- {tool} ---\n{run(tool)}", flush=True)
+    print("which nvcc:", run("which nvcc"), flush=True)
+    print("ls /usr/local/cuda*/bin/nvcc:", run("ls -d /usr/local/cuda*/bin/nvcc 2>/dev/null"), flush=True)
+
+    if shutil.which("ninja") is None:
+        print("--- ninja нет, ставлю pip install --user ninja ---", flush=True)
+        print(run("pip install --user -q ninja 2>&1 | tail -5"), flush=True)
+        # обновляем PATH, чтобы свежий ninja стал виден
+        userbase = os.environ.get("PYTHONUSERBASE", os.path.expanduser("~/.local"))
+        os.environ["PATH"] = f"{userbase}/bin:" + os.environ.get("PATH", "")
+        print("ninja после установки:", run("ninja --version"), flush=True)
+
     try:
         from torch.utils import cpp_extension
-        print("cpp_extension.CUDA_HOME:", cpp_extension.CUDA_HOME, flush=True)
-        print("--- пробная сборка C++ расширения ---", flush=True)
+        cuda_home = cpp_extension.CUDA_HOME
+        print("cpp_extension.CUDA_HOME:", cuda_home, flush=True)
+        build_dir = os.environ.get("TORCH_EXTENSIONS_DIR", "/tmp/torch_ext")
+        os.makedirs(build_dir, exist_ok=True)
+
+        print("--- пробная сборка C++ расширения (нужен только g++ + ninja) ---", flush=True)
         mod = cpp_extension.load_inline(
-            name="mlsub_probe_ext",
+            name="mlsub_probe_cpp",
             cpp_sources="int answer() { return 42; }",
             functions=["answer"],
-            build_directory=os.environ.get("TORCH_EXTENSIONS_DIR", "/tmp"),
+            build_directory=build_dir,
             verbose=False,
         )
         print("сборка C++ расширения: OK, answer() =", mod.answer(), flush=True)
+
+        # Настоящий тест на apex/TE: собирается ли CUDA-ядро из исходников.
+        import torch
+        if cuda_home and torch.cuda.is_available():
+            print("--- пробная сборка CUDA расширения (тест на apex/TE) ---", flush=True)
+            cuda_src = (
+                "#include <torch/extension.h>\n"
+                "__global__ void addone(float* x){ x[threadIdx.x] += 1.0f; }\n"
+                "torch::Tensor run_addone(torch::Tensor t){\n"
+                "  addone<<<1, t.numel()>>>(t.data_ptr<float>()); return t; }\n"
+            )
+            cmod = cpp_extension.load_inline(
+                name="mlsub_probe_cuda",
+                cpp_sources="torch::Tensor run_addone(torch::Tensor t);",
+                cuda_sources=cuda_src,
+                functions=["run_addone"],
+                build_directory=build_dir,
+                verbose=False,
+            )
+            out = cmod.run_addone(torch.zeros(8, device="cuda"))
+            print("сборка CUDA расширения: OK, sum =", float(out.sum().item()), flush=True)
+        else:
+            print("CUDA расширение не проверялось (нет CUDA_HOME или GPU) — это и есть блокер для apex/TE, если так же на GPU-ноде", flush=True)
     except Exception as exc:
-        print(f"сборка C++ расширения: ПРОВАЛ -> {type(exc).__name__}: {exc}", flush=True)
+        print(f"сборка расширения: ПРОВАЛ -> {type(exc).__name__}: {exc}", flush=True)
 
 
 def probe_workspace():

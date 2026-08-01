@@ -2,6 +2,9 @@
 # Точка входа для mlsub. Пишет полный лог на сетевой диск и всегда завершается
 # с кодом 0 — иначе платформа спрячет вывод и статус Failed придёт без логов.
 export PYTHONUNBUFFERED=1
+# Кеш pip-пакетов на переживающем задачу диске (ninja и т.п. ставятся сюда один раз).
+export PYTHONUSERBASE=/home/jovyan/.local
+export PATH=$PYTHONUSERBASE/bin:$PATH
 
 mkdir -p /home/jovyan/logs
 LOG=/home/jovyan/logs/probe_$(date +%F_%H%M%S).log
