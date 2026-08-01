@@ -4,9 +4,10 @@ ROOT=/home/jovyan/hmoe-cloud
 CUDA_PREFIX=$ROOT/cuda-12.1.1
 VENV=$ROOT/te-venv
 WHEEL_DIR=$ROOT/wheels
+TE_SOURCE=$ROOT/src/TransformerEngine
 LOG=$ROOT/logs/te-build-$(date +%F_%H%M%S).log
 TE_COMMIT=b9d690e042b1c4e455214e7dab65d6d3512c05d6
-mkdir -p "$ROOT/logs" "$WHEEL_DIR"
+mkdir -p "$ROOT/logs" "$ROOT/src" "$WHEEL_DIR"
 
 (
     set -eu
@@ -28,10 +29,11 @@ mkdir -p "$ROOT/logs" "$WHEEL_DIR"
         cuda-cudart-static=12.1.105 \
         cuda-driver-dev=12.1.105 cuda-nvrtc-dev=12.1.105 \
         cuda-nvtx=12.1.105 \
+        libcurand-dev=10.3.2.106 \
         nccl=2.27.7 \
         cudnn=9.3.0.75
     "$CONDA" list -p "$CUDA_PREFIX" | grep -E \
-        '^(cuda-(cccl|cudart|driver-dev|nvcc|nvrtc|nvrtc-dev|nvtx|version)|libcublas|libcublas-dev|cudnn|nccl)[[:space:]]'
+        '^(cuda-(cccl|cudart|driver-dev|nvcc|nvrtc|nvrtc-dev|nvtx|version)|libcublas|libcublas-dev|libcurand|libcurand-dev|cudnn|nccl)[[:space:]]'
     du -sh "$CUDA_PREFIX"
 
     echo "=== isolated Python build environment ==="
@@ -49,10 +51,12 @@ print("user_site_enabled:", site.ENABLE_USER_SITE)
 PY
 
     echo "=== exact TransformerEngine source ==="
-    git clone --recursive https://github.com/NVIDIA/TransformerEngine.git /tmp/TransformerEngine
-    git -C /tmp/TransformerEngine checkout --detach "$TE_COMMIT"
-    git -C /tmp/TransformerEngine submodule update --init --recursive
-    git -C /tmp/TransformerEngine rev-parse HEAD
+    if [ ! -d "$TE_SOURCE/.git" ]; then
+        git clone --recursive https://github.com/NVIDIA/TransformerEngine.git "$TE_SOURCE"
+    fi
+    git -C "$TE_SOURCE" checkout --detach "$TE_COMMIT"
+    git -C "$TE_SOURCE" submodule update --init --recursive
+    git -C "$TE_SOURCE" rev-parse HEAD
 
     export CUDA_HOME=$CUDA_PREFIX
     export CUDA_PATH=$CUDA_PREFIX
@@ -70,7 +74,7 @@ PY
     export NVTE_BUILD_THREADS_PER_JOB=1
 
     echo "=== build exact TE wheel for SM90 ==="
-    cd /tmp/TransformerEngine
+    cd "$TE_SOURCE"
     "$VENV/bin/python" -m pip wheel --no-build-isolation --no-deps . -w "$WHEEL_DIR"
     WHEEL=$(find "$WHEEL_DIR" -maxdepth 1 -type f \
         -name 'transformer_engine-2.16.0+b9d690e*.whl' | sort | tail -n 1)
