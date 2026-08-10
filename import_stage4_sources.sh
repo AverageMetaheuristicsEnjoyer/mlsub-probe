@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 ROOT=/home/jovyan/hmoe-cloud
-SRC=$ROOT/src-stage4-import-v1
+SRC=$ROOT/src-stage4-import-v2
 LOG=$ROOT/logs/import-stage4-sources-$(date +%F_%H%M%S).log
 MCORE_SHA=571370c829ca768fe37244f4e2e7f28d8accc4ab
 EO_SHA=1effa026ff096b7fa1063ca2fba19d98be6e6cdf
@@ -11,16 +11,16 @@ mkdir -p "$ROOT/logs" "$SRC"
 (
     set -eu
     export PYTHONNOUSERSITE=1
-    echo "phase=fetch_mcore"
-    git init "$SRC/Megatron-LM"
-    git -C "$SRC/Megatron-LM" remote add origin https://github.com/NVIDIA/Megatron-LM.git
-    git -C "$SRC/Megatron-LM" fetch --depth=1 origin "$MCORE_SHA"
-    git -C "$SRC/Megatron-LM" checkout --detach FETCH_HEAD
-    echo "phase=fetch_emerging_optimizers"
-    git init "$SRC/emerging-optimizers"
-    git -C "$SRC/emerging-optimizers" remote add origin https://github.com/NVIDIA-NeMo/Emerging-Optimizers.git
-    git -C "$SRC/emerging-optimizers" fetch --depth=1 origin "$EO_SHA"
-    git -C "$SRC/emerging-optimizers" checkout --detach FETCH_HEAD
+    echo "phase=download_mcore"
+    mkdir "$SRC/Megatron-LM"
+    /home/user/conda/bin/python -c 'import sys, urllib.request; urllib.request.urlretrieve(sys.argv[1], sys.argv[2])' \
+        "https://github.com/NVIDIA/Megatron-LM/archive/$MCORE_SHA.tar.gz" "$SRC/mcore.tar.gz"
+    tar --strip-components=1 -xzf "$SRC/mcore.tar.gz" -C "$SRC/Megatron-LM"
+    echo "phase=download_emerging_optimizers"
+    mkdir "$SRC/emerging-optimizers"
+    /home/user/conda/bin/python -c 'import sys, urllib.request; urllib.request.urlretrieve(sys.argv[1], sys.argv[2])' \
+        "https://github.com/NVIDIA-NeMo/Emerging-Optimizers/archive/$EO_SHA.tar.gz" "$SRC/emerging-optimizers.tar.gz"
+    tar --strip-components=1 -xzf "$SRC/emerging-optimizers.tar.gz" -C "$SRC/emerging-optimizers"
     echo "phase=clone_stage4"
     git clone --depth=1 "$HMO_REPO" "$SRC/H-MoE-Part-cloud"
     echo "phase=imports"
