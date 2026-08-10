@@ -12,7 +12,7 @@ mkdir -p "$ROOT/logs"
     export CUDA_HOME=$CUDA_PREFIX
     export CUDA_PATH=$CUDA_PREFIX
     export PATH=$VENV/bin:$CUDA_PREFIX/bin:$PATH
-    nvidia_libs=$(find "$VENV/lib/python3.10/site-packages/nvidia" -type d -name lib -printf '%p:' 2>/dev/null)
+    nvidia_libs=$(find "$VENV/lib/python3.10/site-packages/nvidia" /home/user/conda/lib/python3.10/site-packages/nvidia -type d -name lib -printf '%p:' 2>/dev/null)
     export LD_LIBRARY_PATH="$nvidia_libs$CUDA_PREFIX/lib:$CUDA_PREFIX/lib64:$CUDA_PREFIX/targets/x86_64-linux/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
     echo "=== runtime ==="
